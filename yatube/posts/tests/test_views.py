@@ -2,13 +2,11 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from ..forms import PostForm
-from ..views import POST_STR
 from ..models import Group, Post, Follow
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 User = get_user_model()
-POST_STR_TEST = 3
 
 
 class PostPagesTests(TestCase):
