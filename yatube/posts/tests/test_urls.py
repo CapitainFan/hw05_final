@@ -28,16 +28,6 @@ class PostURLTests(TestCase):
         self.authorized_client = Client(self.user)
         self.authorized_client.force_login(self.user)
 
-    def test_post_create(self):
-        """Страница /create/ доступна авторизованому."""
-        response = self.authorized_client.get('/create/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        page_status = {'/create/': HTTPStatus.OK}
-        for page, status in page_status.items():
-            with self.subTest(page=page, status=status):
-                response = self.authorized_client.get(page)
-                self.assertEqual(response.status_code, status)
-
     def test_urls_exists_at_desired_location(self):
         """Проверка страниц на доступность."""
         static_urls = {
@@ -61,11 +51,11 @@ class PostURLTests(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
             '/': 'posts/index.html',
-            '/create/': 'posts/create.html',
+            '/create/': 'posts/create_post.html',
             f'/group/{self.group.slug}/': 'posts/group_list.html',
             f'/profile/{self.user.username}/': 'posts/profile.html',
             f'/posts/{self.post.id}/': 'posts/post_detail.html',
-            f'/posts/{self.post.id}/edit/': 'posts/create.html',
+            f'/posts/{self.post.id}/edit/': 'posts/create_post.html',
         }
         for address, template in templates_url_names.items():
             with self.subTest(address=address):
@@ -85,7 +75,10 @@ class PostURLTests(TestCase):
                 response = self.authorized_client.get(page)
                 self.assertEqual(response.status_code, status)
 
-    def test_post_edit(self):
-        """Страница /posts/<int:post_id>/create/ доступна автору."""
-        response = self.author_client.get('/posts/1/edit/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+    def test_task_list_url_redirect(self):
+        response = self.guest_client.get('/create/')
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_task_detail_url_redirect(self):
+        response = self.guest_client.get('/post_edit/')
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)

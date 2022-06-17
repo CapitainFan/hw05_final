@@ -145,14 +145,12 @@ class PostPagesTests(TestCase):
         ]
         num_of_page = 1
         for page in pages_with_paginator:
-            # Проверка: количество постов на первой странице равно 10.
             if num_of_page == 1:
                 response = self.authorized_client.get(
                     page + '?page=' + str(num_of_page)
                 )
                 self.assertEqual(len(response.context['page_obj']), 10)
                 num_of_page += 1
-            # Проверка: количество постов на второй странице равно 3.
             elif num_of_page == 2:
                 response = self.authorized_client.get(
                     page + '?page=2'
