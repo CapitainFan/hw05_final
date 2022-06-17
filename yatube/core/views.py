@@ -14,6 +14,7 @@ def permission_denied_view(request, reason=''):
     }
     return render(request, 'core/403.html', context, status=403)
 
+
 def server_error(request):
     context = {
         'path': request.path,
