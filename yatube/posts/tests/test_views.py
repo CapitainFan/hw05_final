@@ -1,10 +1,10 @@
-from django import forms
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from ..models import Follow, Group, Post
+from ..forms import PostForm
 
 User = get_user_model()
 
@@ -86,49 +86,27 @@ class PostPagesTests(TestCase):
         """Шаблон profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': self.user.username}))
-        self.check_post_page(response.context['page_obj'][0])
-        context_author = response.context['author']
-        self.assertEqual(context_author, self.post.author)
-
-    def test_profile_page_show_correct_context(self):
-        """Шаблон profile сформирован с правильным контекстом."""
-        response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': self.user.username}))
         for object in response.context['page_obj']:
             post_id = object.id
             post_text = object.text
             post_author = object.author
             post_group = object.group
+            context_author = response.context['author']
+            self.assertEqual(context_author, self.post.author)
             self.assertEqual(post_text, self.post_list[post_id].text)
             self.assertEqual(post_author, self.user)
             self.assertEqual(post_group, self.group)
 
-    def test_create_post(self):
-        """Шаблон create_post сформирован с правильным контекстом."""
-        response = self.authorized_client.get(reverse("posts:post_create"))
-        form_fields = {
-            "text": forms.fields.CharField,
-            "group": forms.fields.ChoiceField,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get("form").fields.get(value)
-                self.assertIsInstance(form_field, expected)
-
-    def test_post_edit(self):
+    def test_post_edit_page_show_correct_context(self):
         """Шаблон post_edit сформирован с правильным контекстом."""
-        post = self.post
+        """Шаблон post_create сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse("posts:post_edit", kwargs={"post_id": post.id})
-        )
-        form_fields = {
-            "text": (forms.fields.CharField, post.text),
-            "group": (forms.fields.ChoiceField, post.group.id),
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get("form").fields.get(value)
-                self.assertIsInstance(form_field, expected)
+            reverse('posts:post_edit', kwargs={'post_id': '0'}))
+        form_object = response.context['form']
+        self.assertIsInstance(form_object, PostForm)
+        response = self.authorized_client.get(reverse('posts:post_create'))
+        form_object = response.context['form']
+        self.assertIsInstance(form_object, PostForm)
 
     def test_new_post(self):
         """При создании пост появляется в index, group_list, profile."""
