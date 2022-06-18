@@ -97,14 +97,16 @@ class PostPagesTests(TestCase):
             self.assertEqual(post_author, self.user)
             self.assertEqual(post_group, self.group)
 
-    def test_post_edit_page_show_correct_context(self):
-        """Шаблон post_edit сформирован с правильным контекстом."""
+    def test_post_page_show_correct_context(self):
         """Шаблон post_create сформирован с правильным контекстом."""
-        response = self.authorized_client.get(
-            reverse('posts:post_edit', kwargs={'post_id': '0'}))
+        response = self.authorized_client.get(reverse('posts:post_create'))
         form_object = response.context['form']
         self.assertIsInstance(form_object, PostForm)
-        response = self.authorized_client.get(reverse('posts:post_create'))
+        """Шаблон post_edit сформирован с правильным контекстом."""
+        post = self.post
+        response = self.authorized_client.get(
+            reverse("posts:post_edit", kwargs={"post_id": post.id})
+        )
         form_object = response.context['form']
         self.assertIsInstance(form_object, PostForm)
 
