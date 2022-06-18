@@ -129,17 +129,3 @@ class PostFormTests(TestCase):
             author=self.commentator,
         ).exists()
         )
-
-    def test_post_add_comment_unauthorized_user(self):
-        """Проверка создания коментария не авторизированным клиентом."""
-        comments_count = Comment.objects.count()
-        form_data = {'text': 'Коментарий от не авторизированного пользователя'}
-        response = self.guest_client.post(
-            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
-            data=form_data,
-            follow=True
-        )
-        redirect = (reverse('login') + '?next=' + reverse(
-            'posts:add_comment', kwargs={'post_id': self.post.id}))
-        self.assertRedirects(response, redirect)
-        self.assertEqual(Comment.objects.count(), comments_count)

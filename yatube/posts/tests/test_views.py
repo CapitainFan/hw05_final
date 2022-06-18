@@ -3,7 +3,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
-from ..models import Follow, Group, Post
+from ..models import Follow, Group, Post, Comment
 from ..forms import PostForm
 
 User = get_user_model()
@@ -188,6 +188,20 @@ class PostPagesTests(TestCase):
         cache.clear()
         post_clear = self.authorized_client.get(reverse('posts:index')).content
         self.assertNotEqual(post_add, post_clear)
+
+    def test_post_add_comment_unauthorized_user(self):
+        """Проверка создания коментария не авторизированным клиентом."""
+        comments_count = Comment.objects.count()
+        form_data = {'text': 'Коментарий от не авторизированного пользователя'}
+        response = self.guest_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True
+        )
+        redirect = (reverse('login') + '?next=' + reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.id}))
+        self.assertRedirects(response, redirect)
+        self.assertEqual(Comment.objects.count(), comments_count)
 
 
 class FollowTest(TestCase):
