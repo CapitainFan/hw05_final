@@ -82,13 +82,13 @@ class PostPagesTests(TestCase):
         self.assertEqual(first_object.group, self.post.group)
         self.assertEqual(first_object.image, self.post.image)
 
-    def test_post_list_page_uses_correct_context(self):
-        """Шаблон post_list сформирован с правильным контекстом."""
+    def test_profile_page_show_correct_context(self):
+        """Шаблон profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse("posts:group_posts", kwargs={"slug": self.group.slug})
-        )
-        group_post = response.context["page_obj"][0]
-        self.context_on_page(group_post)
+            reverse('posts:profile', kwargs={'username': self.user.username}))
+        self.check_post_page(response.context['page_obj'][0])
+        context_author = response.context['author']
+        self.assertEqual(context_author, self.post.author)
 
     def test_profile_page_show_correct_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
@@ -102,17 +102,6 @@ class PostPagesTests(TestCase):
             self.assertEqual(post_text, self.post_list[post_id].text)
             self.assertEqual(post_author, self.user)
             self.assertEqual(post_group, self.group)
-
-    def test_post_detail_pages_show_correct_context(self):
-        """Шаблон post_detail сформирован с правильным контекстом."""
-        response = self.author_client.get(
-            reverse("posts:post_detail", kwargs={"post_id": self.post.id})
-        )
-        first_object = response.context.get("post")
-        post_id_0 = first_object.pk
-        self.assertEqual(post_id_0, self.post.pk)
-        post_detail = response.context.get("post")
-        self.context_on_page(post_detail)
 
     def test_create_post(self):
         """Шаблон create_post сформирован с правильным контекстом."""
@@ -196,25 +185,18 @@ class PostPagesTests(TestCase):
         self.assertNotIn(self.post, response.context["page_obj"])
 
     def test_cache(self):
-        """Тестирование кэша"""
-        cache_post = Post.objects.create(
+        """Проверка кеширование главной страницы"""
+        post_cache = Post.objects.create(
+            text='Тест кеша',
             author=self.user,
-            text="Тестовый текст",
         )
-        response_1 = self.guest_client.get(reverse("posts:index"))
-        cache_post.delete()
-        response_2 = self.guest_client.get(reverse("posts:index"))
-        cache.clear
-        response_3 = self.guest_client.get(reverse("posts:index"))
-        self.assertEqual(
-            response_1.context["page_obj"][0].text, cache_post.text
-        )
-        self.assertEqual(
-            response_2.context["page_obj"][0].text, cache_post.text
-        )
-        self.assertEqual(
-            response_3.context["page_obj"][0].text, self.post.text
-        )
+        post_add = self.authorized_client.get(reverse('posts:index')).content
+        post_cache.delete()
+        post_delet = self.authorized_client.get(reverse('posts:index')).content
+        self.assertEqual(post_add, post_delet)
+        cache.clear()
+        post_clear = self.authorized_client.get(reverse('posts:index')).content
+        self.assertNotEqual(post_add, post_clear)
 
 
 class FollowTest(TestCase):

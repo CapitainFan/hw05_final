@@ -8,7 +8,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from ..forms import PostForm
-from ..models import Group, Post
+from ..models import Group, Post, Comment
 
 User = get_user_model()
 
@@ -21,6 +21,9 @@ class PostFormTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='TestUser')
+        cls.commentator = User.objects.create_user(
+            username='commentator'
+        )
         cls.group = Group.objects.create(
             title='Тестовое название группы',
             slug='test-slug',
@@ -104,3 +107,39 @@ class PostFormTests(TestCase):
         self.assertTrue(Post.objects.filter(
             text=form_data_edit['text'],
             group__slug='test-slug',).exists())
+
+    def test_post_add_comment_authorized_user(self):
+        """Проверка создания коментария авторизированным клиентом."""
+        comments_count = Comment.objects.count()
+        form_data = {'text': 'Коментарий от авторизированного пользователя'}
+        self.author_client.force_login(self.commentator)
+        response = self.author_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True
+        )
+        self.assertRedirects(
+            response,
+            reverse('posts:post_detail', kwargs={'post_id': self.post.id})
+        )
+        self.assertEqual(Comment.objects.count(), comments_count + 1)
+        self.assertTrue(Comment.objects.filter(
+            text=form_data['text'],
+            post_id=self.post.id,
+            author=self.commentator,
+        ).exists()
+        )
+
+    def test_post_add_comment_unauthorized_user(self):
+        """Проверка создания коментария не авторизированным клиентом."""
+        comments_count = Comment.objects.count()
+        form_data = {'text': 'Коментарий от не авторизированного пользователя'}
+        response = self.guest_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True
+        )
+        redirect = (reverse('login') + '?next=' + reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.id}))
+        self.assertRedirects(response, redirect)
+        self.assertEqual(Comment.objects.count(), comments_count)
